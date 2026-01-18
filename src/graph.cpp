@@ -37,12 +37,51 @@ Edge::setProperty(const std::string &propertyName, Property *property)
         std::cerr << "[ERR]: Undefined property \"" << propertyName << "\"\n";
     }
 }
-
+void 
+AggregatedEdge::addAggregationLevel(std::shared_ptr<AggregationLevel> aggregationLevel) {
+    size_t level = aggregationLevel->getLevel();
+    if (level >= _aggregationLevels.size())
+    {
+        _aggregationLevels.resize(level + 1);
+    }
+    _aggregationLevels[level] = aggregationLevel;
+    aggregationLevel->addEdge(this);
+}
+void 
+AggregatedNode::addAggregationLevel(std::shared_ptr<AggregationLevel> aggregationLevel) {
+    size_t level = aggregationLevel->getLevel();
+    if (level >= _aggregationLevels.size())
+    {
+        _aggregationLevels.resize(level + 1);
+    }
+    _aggregationLevels[level] = aggregationLevel;
+    aggregationLevel->addNode(this);
+}
 void
 Node::setProperty(const std::string &propertyName, Property *property)
 {
     const auto &it = _DEFAULT_NODE_PROPRETIES.find(propertyName);
     if (it != _DEFAULT_NODE_PROPRETIES.end())
+    {
+        const auto &itt = getProperties().find(propertyName);
+        if (itt == getProperties().end())
+        {
+            getProperties()[propertyName] = property;
+        }
+        else
+        {
+            std::cout << "[WRN]: Trying to overwrite property \"" << propertyName << "\"\n";
+        }
+    }
+    else
+    {
+        std::cerr << "[ERR]: Undefined property \"" << propertyName << "\"\n";
+    }
+}
+void
+AggregationLevel::setProperty(const std::string &propertyName, Property *property) {
+    const auto &it = _DEFAULT_AGGREGATION_LEVEL_PROPRETIES.find(propertyName);
+    if (it != _DEFAULT_AGGREGATION_LEVEL_PROPRETIES.end())
     {
         const auto &itt = getProperties().find(propertyName);
         if (itt == getProperties().end())
@@ -68,31 +107,36 @@ Graph::createFromDataset(const std::string& dataset_name) {
         std::cerr << "Error: Cannot open file :"<<dataset_name<< "\n";
         return nullptr;
     }
-    std::unordered_map<int, std::shared_ptr<Node>> nodes;
+    std::unordered_map<int, std::shared_ptr<AggregatedNode>> nodes;
     std::string line;
+    std::shared_ptr<AggregationLevel> aggregationLevel = std::make_shared<AggregationLevel>(graph->_aggregationLevelsCount++, 0);
+    graph->_aggregationLevels.push_back(aggregationLevel);
     while (std::getline(data_set, line)) {
         if (line.empty() || line[0] == '#') continue; 
         std::istringstream iss(line); int from, to; 
         if (!(iss >> from >> to)) continue;
-        std::shared_ptr<Node> fromNode;
-        std::shared_ptr<Node> toNode;
+        std::shared_ptr<AggregatedNode> fromNode;
+        std::shared_ptr<AggregatedNode> toNode;
         if (nodes.find(from) != nodes.end()) {
             fromNode = nodes[from];
         } else {
-            fromNode = std::make_shared<Node>(graph->_nodesCount++);
+            fromNode = std::make_shared<AggregatedNode>(graph->_nodesCount++);
             fromNode->setProperty("DATA", new DataProprerty(from));
+            fromNode->addAggregationLevel(aggregationLevel);
             nodes[from] = fromNode;
             graph->_nodes.push_back(fromNode);
         }
         if (nodes.find(to) != nodes.end()) {
             toNode = nodes[to];
         } else {
-            toNode = std::make_shared<Node>(graph->_nodesCount++);
+            toNode = std::make_shared<AggregatedNode>(graph->_nodesCount++);
             toNode->setProperty("DATA", new DataProprerty(to));
+            toNode->addAggregationLevel(aggregationLevel);
             nodes[to] = toNode;
             graph->_nodes.push_back(toNode);
         }
-        std::shared_ptr<Edge> edge = std::make_shared<Edge>(graph->_edgesCount++, fromNode, toNode);
+        std::shared_ptr<AggregatedEdge> edge = std::make_shared<AggregatedEdge>(graph->_edgesCount++, fromNode, toNode);
+        edge->addAggregationLevel(aggregationLevel);
         fromNode->addOutEdge(edge);
         toNode->addInEdge(edge);
         graph->_edges.push_back(edge);

@@ -74,7 +74,9 @@ class AggregatedEdge : public Edge {
         std::string getString() override { return "AggregatedEdge <" + std::to_string(getId()) + ">"; };
         std::vector<std::shared_ptr<Edge>> getChildEdges() const { return _childEdges; };
         std::vector<std::shared_ptr<AggregationLevel>> getAggregationLevels() const { return _aggregationLevels; };
+        void addAggregationLevel(std::shared_ptr<AggregationLevel> aggregationLevel);
         AggregatedEdge(unsigned id, std::shared_ptr<Node> source, std::shared_ptr<Node> target, std::vector<std::shared_ptr<Edge>> childEdges): Edge(id, source, target), _childEdges(childEdges) {};
+        AggregatedEdge(unsigned id, std::shared_ptr<Node> source, std::shared_ptr<Node> target): Edge(id, source, target), _childEdges({}) {};
         ~AggregatedEdge() = default;
     private:
         std::vector<std::shared_ptr<Edge>> _childEdges;
@@ -107,7 +109,9 @@ class AggregatedNode : public Node {
         std::string getString() override { return "AggregatedNode <" + std::to_string(getId()) + ">"; };
         std::vector<std::shared_ptr<Node>> getChildNodes() const { return _childNodes; };
         std::vector<std::shared_ptr<AggregationLevel>> getAggregationLevels() const { return _aggregationLevels; };
+        void addAggregationLevel(std::shared_ptr<AggregationLevel> aggregationLevel) ;
         AggregatedNode(unsigned id, std::vector<std::shared_ptr<Node>> childNodes): Node(id), _childNodes(childNodes) {};
+        AggregatedNode(unsigned id): Node(id), _childNodes({}) {};
         ~AggregatedNode() = default;
     private:
         std::vector<std::shared_ptr<Node>>              _childNodes;
@@ -117,9 +121,12 @@ class AggregatedNode : public Node {
 class AggregationLevel : public GraphObject {
     public:
         inline static const std::set<std::string> _DEFAULT_AGGREGATION_LEVEL_PROPRETIES;
+        void setProperty(const std::string& propertyName, Property* property) override;
         std::string getString() override { return "AggregationLevel <" + std::to_string(getId()) + ">"; };
         void addNode(std::shared_ptr<Node> node) { _NodesIds.insert(node->getId()); };
+        void addNode(const Node* node) { _NodesIds.insert(node->getId()); };
         void addEdge(std::shared_ptr<Edge> edge) { _EdgesIds.insert(edge->getId()); };
+        void addEdge(const Edge* edge) { _EdgesIds.insert(edge->getId()); };
         const std::unordered_set<size_t>& getNodesIds() const { return _NodesIds; };
         const std::unordered_set<size_t>& getEdgesIds() const { return _EdgesIds; };
         unsigned getLevel() const { return _level; };
@@ -148,15 +155,15 @@ class Graph {
         ~Graph() = default;
     private:
         Graph(): _nodesCount(0), _edgesCount(0){};
-        void CreateNode(Node* node);
-        void CreateEdge(Edge* edge);
-        void CreateAggregationLevel(AggregationLevel* aggregationLevel);
-        void CreateAggregatedNode(AggregatedNode* aggregatedNode, AggregationLevel* aggregationLevel, std::vector<std::shared_ptr<Node>> childNodes);
-        void CreateAggregatedEdge(AggregatedEdge* aggregatedEdge, AggregationLevel* aggregationLevel, std::vector<std::shared_ptr<Edge>> childEdges);
-        std::vector<std::shared_ptr<Node>>  _nodes;
-        std::vector<std::shared_ptr<Edge>>  _edges;
-        size_t                              _nodesCount = 0;
-        size_t                              _edgesCount = 0;
-        size_t                              _aggregationLevelsCount = 0;
-        std::vector<std::shared_ptr<AggregationLevel>> _aggregationLevels;
+        //void CreateNode(Node* node);
+        //void CreateEdge(Edge* edge);
+        //void CreateAggregationLevel(AggregationLevel* aggregationLevel);
+        //void CreateAggregatedNode(AggregatedNode* aggregatedNode, AggregationLevel* aggregationLevel, std::vector<std::shared_ptr<Node>> childNodes);
+        //void CreateAggregatedEdge(AggregatedEdge* aggregatedEdge, AggregationLevel* aggregationLevel, std::vector<std::shared_ptr<Edge>> childEdges);
+        std::vector<std::shared_ptr<Node>>              _nodes;
+        std::vector<std::shared_ptr<Edge>>              _edges;
+        size_t                                          _nodesCount = 0;
+        size_t                                          _edgesCount = 0;
+        size_t                                          _aggregationLevelsCount = 0;
+        std::vector<std::shared_ptr<AggregationLevel>>  _aggregationLevels;
 };

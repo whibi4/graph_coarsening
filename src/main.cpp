@@ -9,12 +9,16 @@ int main() {
     } else {
         std::cout << "[INFO]: DATASET_PATH is set to \""<<dataset_name<<"\"\n";
     }
-    Graph *graph;
+    Graph *graph = nullptr;
     {
         auto t0 = std::chrono::steady_clock::now();
         graph = Graph::createFromDataset(dataset_name);
         auto t1 = std::chrono::steady_clock::now();
         std::cout << "[INFO]: Graph created in " << std::chrono::duration<double>(t1 - t0).count() << "s\n";
+        if (graph == nullptr) {
+            std::cerr << "[ERR]: Graph creation failed\n";
+            return 1;
+        }
     }
     {
         auto t0 = std::chrono::steady_clock::now();
